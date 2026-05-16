@@ -31,10 +31,10 @@ local function makeDraggable(frame)
     UserInputService.InputChanged:Connect(function(input) if input == dragInput and dragging then local delta = input.Position - dragStart; frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y) end end)
 end
 
--- اللوحة الرئيسية (تم تعديل الارتفاع الافتراضي لتستوعب القائمة الجديدة بانتظام)
+-- اللوحة الرئيسية
 local mainFrame = Instance.new("Frame", sg)
-mainFrame.Size = UDim2.new(0, 450, 0, 400)
-mainFrame.Position = UDim2.new(0.5, -225, 0.5, -200)
+mainFrame.Size = UDim2.new(0, 450, 0, 420) -- تم ضبط الارتفاع ليتناسب مع العناصر بشكل ممتاز
+mainFrame.Position = UDim2.new(0.5, -225, 0.5, -210)
 mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 mainFrame.Active = true
 mainFrame.ClipsDescendants = true
@@ -105,48 +105,71 @@ for i, v in ipairs(colors) do
     Instance.new("UICorner", cBtn).CornerRadius = UDim.new(0.3, 0)
     cBtn.MouseButton1Click:Connect(function() 
         selectedColor = v.Tag; mainStroke.Color = v.C
-        if sg:FindFirstChild("MiniInputFrame") then sg:MiniInputFrame.UIStroke.Color = v.C end
+        if sg:FindFirstChild("MiniInputFrame") then sg.MiniInputFrame.UIStroke.Color = v.C end
     end)
 end
 
--- [الإضافة الجديدة] قائمة الخطوط الأفقية الكاملة لروبلوكس
+-- [تحديث] قائمة الخطوط الأفقية لتشمل كل خطوط روبلوكس المتاحة
 local fontFrame = Instance.new("ScrollingFrame", mainFrame)
-fontFrame.Size = UDim2.new(0.9, 0, 0, 40); fontFrame.Position = UDim2.new(0.05, 0, 0.46, 0); fontFrame.CanvasSize = UDim2.new(12, 0, 0, 0); fontFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); fontFrame.ScrollBarThickness = 2; Instance.new("UICorner", fontFrame)
+fontFrame.Size = UDim2.new(0.9, 0, 0, 40)
+fontFrame.Position = UDim2.new(0.05, 0, 0.46, 0)
+fontFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- سيتم حسابه تلقائياً بناءً على عدد الخطوط
+fontFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+fontFrame.ScrollBarThickness = 2
+Instance.new("UICorner", fontFrame)
 
-local fonts = {
-    "Legacy", "Arial", "ArialBold", "SourceSans", "SourceSansBold", "SourceSansItalic", 
-    "SourceSansLight", "SourceSansSemibold", "Code", "Highway", "Gotham", "GothamBold", 
-    "GothamBlack", "GothamMedium", "Light", "Bodoni", "Garamond", "Cartoon", "SciFi", 
-    "Arcade", "Fantasy", "SpecialElite", "Ubuntu", "FredokaOne", "Bangers", "GrandHotel", 
-    "Creepster", "Michroma", "PermanentMarker", "Oswald", "Roboto", "RobotoCondensed", 
-    "RobotoMono", "Sarpanch", "TitilliumWeb"
-}
+local fontListLayout = Instance.new("UIListLayout", fontFrame)
+fontListLayout.FillDirection = Enum.FillDirection.Horizontal
+fontListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+fontListLayout.Padding = UDim.new(0, 8)
+
+local fontPadding = Instance.new("UIPadding", fontFrame)
+fontPadding.PaddingLeft = UDim.new(0, 5)
+fontPadding.PaddingTop = UDim.new(0, 5)
+
+-- جلب كل الخطوط من الـ Enum الخاص بروبلوكس تلقائياً
+local fonts = {}
+for _, font in ipairs(Enum.Font:GetEnumItems()) do
+    table.insert(fonts, font.Name)
+end
+table.sort(fonts)
 
 local selectedFont = "FredokaOne"
 for i, fName in ipairs(fonts) do
     local fBtn = Instance.new("TextButton", fontFrame)
-    fBtn.Size = UDim2.new(0, 100, 0, 30); fBtn.Position = UDim2.new(0, (i-1)*110 + 5, 0, 5); fBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40); fBtn.TextColor3 = Color3.new(1,1,1); fBtn.Text = fName; fBtn.TextSize = 14
+    fBtn.Size = UDim2.new(0, 110, 0, 30)
+    fBtn.BackgroundColor3 = (fName == selectedFont) and Color3.fromRGB(255, 105, 180) or Color3.fromRGB(40, 40, 40)
+    fBtn.TextColor3 = Color3.new(1, 1, 1)
+    fBtn.Text = fName
+    fBtn.TextSize = 13
+    fBtn.LayoutOrder = i
     pcall(function() fBtn.Font = Enum.Font[fName] end)
     Instance.new("UICorner", fBtn)
     
     fBtn.MouseButton1Click:Connect(function()
         selectedFont = fName
         for _, child in ipairs(fontFrame:GetChildren()) do
-            if child:IsA("TextButton") then child.BackgroundColor3 = Color3.fromRGB(40, 40, 40) end
+            if child:IsA("TextButton") then
+                child.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            end
         end
-        fBtn.BackgroundColor3 = Color3.fromRGB(255, 105, 180) -- تمييز الخط المختار باللون الوردي
+        fBtn.BackgroundColor3 = Color3.fromRGB(255, 105, 180)
     end)
 end
+fontFrame.CanvasSize = UDim2.new(0, #fonts * 118 + 10, 0, 0)
 
 -- زر السبام
 local spamBtn = Instance.new("TextButton", mainFrame)
-spamBtn.Size = UDim2.new(0.9, 0, 0, 45); spamBtn.Position = UDim2.new(0.05, 0, 0.62, 0); spamBtn.Text = "تشغيل السبام 🚀"; spamBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40); spamBtn.TextColor3 = Color3.new(1,1,1); spamBtn.TextScaled = true; Instance.new("UICorner", spamBtn)
+spamBtn.Size = UDim2.new(0.9, 0, 0, 45); spamBtn.Position = UDim2.new(0.05, 0, 0.61, 0); spamBtn.Text = "تشغيل السبام 🚀"; spamBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40); spamBtn.TextColor3 = Color3.new(1,1,1); spamBtn.TextScaled = true; Instance.new("UICorner", spamBtn)
 
 local function sendMessage(inputBox)
     local text = inputBox.Text; if text == "" then return end
     local size = sizeInput.Text; local formatted = '<font face="'..selectedFont..'" color="'..selectedColor..'" size="'..size..'"><b>'..text..'</b></font>'
-    local remote = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("ChatEvent")
-    if remote then remote:FireServer(formatted) if not spamming then inputBox.Text = ""; inputBox:ReleaseFocus() end end
+    local args = {
+        [1] = formatted
+    }
+    game:GetService("ReplicatedStorage").GlobalChatEvent:FireServer(unpack(args))
+    if not spamming then inputBox.Text = ""; inputBox:ReleaseFocus() end
 end
 
 spamBtn.MouseButton1Click:Connect(function()
@@ -172,5 +195,4 @@ local icon = Instance.new("ImageButton", sg); icon.Size = UDim2.new(0, 60, 0, 60
 minBtn.MouseButton1Click:Connect(function() mainFrame.Visible = false; icon.Visible = true end)
 icon.MouseButton1Click:Connect(function() mainFrame.Visible = true; icon.Visible = false end)
 
--- تم إضافة علامة الاقتباس المفقودة لتفادي حدوث Error في كود التنبيه تلقائياً
 StarterGui:SetCore("SendNotification", {Title = "shhode320", Text = "حيووووو السكربت اشتغلل💥😍 ", Icon = pImageId, Duration = 5})
